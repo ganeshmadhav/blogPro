@@ -1,14 +1,19 @@
     
 const express = require('express');
+// morgan
+const morgan = require('morgan');
+// mongoose
+const mongoose = require('mongoose');
 
+const Blog = require('./models/blog');
 // express app
 const app = express();
 
-// morgan
-const morgan = require('morgan');
-
-// listen for requests
-app.listen(3001);
+// connect to mongodb
+const dbURI = 'mongodb+srv://user1:XXXXXX@nodebl.07fm1.mongodb.net/blogpro?retryWrites=true&w=majority';
+mongoose.connect(dbURI, {useNewUrlParser: true, useUnifiedTopology: true})
+    .then((result) => app.listen(3001))
+    .catch((err) => console.log(err));
 
 // register view engine
 app.set('view engine', 'ejs');
@@ -16,7 +21,6 @@ app.set('view engine', 'ejs');
 
 // middleware & static files
 app.use(express.static('public'));
-
 
 app.use((req, res, next) => {
     console.log('new request made:');
@@ -26,30 +30,65 @@ app.use((req, res, next) => {
     next();
   });
   
-  app.use((req, res, next) => {
-    console.log('in the next middleware');
-    next();
-  });
-  
-  app.use(morgan('dev'));
-  
-  app.use((req, res, next) => {
-    res.locals.path = req.path;
-    next();
-  });
+app.use((req, res, next) => {
+console.log('in the next middleware');
+next();
+});
+
+app.use(morgan('dev'));
+
+app.use((req, res, next) => {
+res.locals.path = req.path;
+next();
+});
 
   
 app.get('/', (req, res) => {
-  const blogs = [
-    {title: 'Title 1', snippet: 'SNIP1'},
-    {title: 'Title 2', snippet: 'SNIP2'},
-    {title: 'Title 3', snippet: 'SNIP3'},
-  ];
-  res.render('index', { title: 'Home', blogs });
+    res.redirect('/blogs');
 });
 
 app.get('/about', (req, res) => {
   res.render('about', { title: 'About' });
+});
+
+// blog routes
+
+// mongoose and mongodb sandbox routines
+
+app.get('/add-blog', (req, res) => {
+    const blog = new Blog({
+        title: 'blog1',
+        snippet: 'snippet for blog',
+        body: 'this is a blog'
+    });
+
+    blog.save()
+    .then((result) => {
+        res.send(result);
+    })
+    .catch((err) =>  {
+        console.log(err);
+    });
+});
+
+app.get('/all-blogs', (req, res) => {
+    Blog.find()
+        .then((result) => {
+            res.send(result);
+        })
+        .catch((err) => {
+            console.log(err);
+        });
+});
+
+app.get('/blogs', (req, res) => {
+    Blog.find().sort({ createdAt: -1})
+        .then((result) => {
+            res.render('index', {title: 'All blogs', blogs: result});
+        })
+        .catch((err) => {
+            console.log(err);
+        });
 });
 
 app.get('/blogs/create', (req, res) => {
