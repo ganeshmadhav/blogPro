@@ -5,7 +5,7 @@ const express = require('express');
 const app = express();
 
 // morgan
-const mongan = require('morgan');
+const morgan = require('morgan');
 
 // listen for requests
 app.listen(3001);
